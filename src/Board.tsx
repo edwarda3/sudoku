@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
 
 interface BoardState {
     tiles: Tile[][];
@@ -36,49 +36,71 @@ export class Board extends React.Component<BoardProps, BoardState> {
 
     isValidBoard = (tiles:Tile[][]):boolean => {
         const base:number = this.props.base;
-        const isValidTile = (row:number, column:number): boolean => {
-            const isValidSection = (section: Tile[]):boolean => {
-                const usedNumbers:number[] = [];
-                let status:boolean = true;
-                section.forEach(sectionTile => {
-                    if(usedNumbers.includes(sectionTile.value) && sectionTile.value !== emptyNumber){
-                        status = false;
-                    }
-                    else{
-                        usedNumbers.push(sectionTile.value);
-                    }
-                });
-                return status;
-            }
-            const rowIsValid:boolean = isValidSection(tiles[row]);
-            if(!rowIsValid){ return false; }
-
-            const thisColumn:Tile[] = [];
-            for(let crow=0; crow<tiles.length; crow++){ thisColumn.push(tiles[crow][column]); }
-            const columnIsValid:boolean = isValidSection(thisColumn);
-            if(!columnIsValid){ return false; }
-
-            const thisSection:Tile[] = [];
-            let srow:number = Math.floor(row / base);
-            let scol:number = Math.floor(column / base);
-            for(let sirow=srow*base; sirow<(srow+1)*base; sirow++){
-                for(let sicol=scol*base; sicol<(scol+1)*3; sicol++){
-                    thisSection.push(tiles[sirow][sicol]);
+        const isValidSection = (section: Tile[]):boolean => {
+            const usedNumbers:number[] = [];
+            let status:boolean = true;
+            section.forEach(sectionTile => {
+                if(usedNumbers.includes(sectionTile.value) && sectionTile.value !== emptyNumber){
+                    status = false;
                 }
-            }
-            const sectionIsValid = isValidSection(thisSection);
-            if(!sectionIsValid){ return false; }
-
-            return (rowIsValid && columnIsValid && sectionIsValid)
+                else{
+                    usedNumbers.push(sectionTile.value);
+                }
+            });
+            return status;
         }
-        for(let r=0; r<tiles.length; r++){
-            for(let c=0; c<tiles[r].length; c++){
-                if(!isValidTile(r,c)){
+        const rowsAreValid = ():boolean => {
+            let rows:boolean = true;
+            for(let r=0; r<tiles.length; r++){
+                if(!isValidSection(tiles[r])){
                     return false;
                 }
             }
+            return rows;
         }
-        return true;
+        const columnsAreValid = ():boolean => {
+            let cols:boolean = true;
+            let columnArrays:Tile[][] = new Array(base*base).fill([]);
+            for(let r=0; r<tiles.length; r++){
+                for(let c=0; c<tiles[r].length; c++){
+                    columnArrays[c].push(tiles[r][c]);
+                }
+            }
+            columnArrays.forEach(column => {
+                if(!isValidSection(column)){
+                    cols = false;
+                    return;
+                }
+            })
+            return cols;
+        }
+        const sectionsAreValid = ():boolean => {
+            let sections:boolean = true;
+            let sectionArrays:Tile[][] = new Array(base*base).fill([]);
+            for(let sr=0; sr<base; sr++){
+                for(let sc=0; sc<base; sc++){
+                    for(let r=sr*base; r<(sr+1)*base; r++){
+                        for(let c=sc*base; c<(sc+1)*base; c++){
+                            sectionArrays[(sr*base)+sc].push(tiles[r][c]);
+                        }
+                    }
+                }
+            }
+            sectionArrays.forEach(column => {
+                if(!isValidSection(column)){
+                    sections = false;
+                    return;
+                }
+            })
+            return sections;
+        }
+
+        if(!rowsAreValid()) return false;
+        else if(!columnsAreValid()) return false;
+        else if(!sectionsAreValid()) return false;
+        else{
+            return true;
+        }
     }
 
     solve = () => {
@@ -125,6 +147,7 @@ export class Board extends React.Component<BoardProps, BoardState> {
             } else {
                 iterate(false);
             }
+            console.log(`(${currentRow},${currentColumn})`)
             this.forceUpdate();
         }
     }
@@ -134,7 +157,7 @@ export class Board extends React.Component<BoardProps, BoardState> {
         let isSolved = true;
         for(let r=0; r<tiles.length; r++) {
             for(let c=0; c<tiles[r].length; c++) {
-                if(tiles[r][c].value == emptyNumber){
+                if(tiles[r][c].value === emptyNumber){
                     isSolved = false;
                 }
             }
