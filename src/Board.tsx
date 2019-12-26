@@ -14,7 +14,7 @@ export class Board extends React.Component<BoardProps, BoardState> {
         super(props);
         this.state = {
             tiles: this.fillTiles(props.baseBoard),
-            status: "idle",
+            status: "Idle",
         }
     }
 
@@ -129,34 +129,53 @@ export class Board extends React.Component<BoardProps, BoardState> {
         }
     }
 
-    drawBoard = () => {
-        const drawRow = (row:Tile[]) => {
-            const drawTile = (tile:Tile):ReactNode => {
-                const tileColor:string = tile.truth ? "#111" : "#4141A8";
-                return (
-                    <div style={{display:'inline', padding:"5px"}}>
-                        <span style={{color:tileColor}}>{tile.value}</span>
-                    </div>
-                )
-            }
-            return (
-                <div style={{display:'block'}}>
-                {
-                    row.map( (t, cIdx) => {
-                        return (
-                            <div key={cIdx} style={{display:'inline', padding:0, margin:0}}>
-                                {drawTile(t)}
-                            </div>
-                        )
-                    })
+    makeIntoNewBoard = () => {
+        let tiles = this.state.tiles;
+        let isSolved = true;
+        for(let r=0; r<tiles.length; r++) {
+            for(let c=0; c<tiles[r].length; c++) {
+                if(tiles[r][c].value == emptyNumber){
+                    isSolved = false;
                 }
-                </div>
-            )
+            }
         }
+        if(!isSolved){
+            alert("Solve the board first");
+        }
+        const chance = .65;
+        for(let r=0; r<tiles.length; r++) {
+            for(let c=0; c<tiles[r].length; c++) {
+                if(Math.random() < chance) {
+                    tiles[r][c].reset();
+                    tiles[r][c].truth = false;
+                } else {
+                    tiles[r][c].truth = true;
+                }
+            }
+        }
+    }
+
+    zeroOut = () => {
+        let tiles = this.state.tiles;
+        for(let r=0; r<tiles.length; r++) {
+            for(let c=0; c<tiles[r].length; c++) {
+                tiles[r][c].truth = false;
+                tiles[r][c].reset();
+            }
+        }
+    }
+
+    drawBoard = () => {
         return this.state.tiles.map( (row, rIdx) => {
             return (
-                <div key={rIdx}>
-                    {drawRow(row)}
+                <div key={rIdx} style={{display:'block'}}>
+                    {row.map( (t, cIdx) => {
+                        return (
+                            <div key={cIdx} style={{display:'inline', padding:0, margin:0}}>
+                                <DrawTile value={t.value} truth={t.truth} />
+                            </div>
+                        )
+                    })}
                 </div>
             );
         })
@@ -167,13 +186,38 @@ export class Board extends React.Component<BoardProps, BoardState> {
             <div>
                 {this.drawBoard()}
                 <button onClick={() => {
-                    this.setState({status:"solving"});
+                    this.setState({status:"Solving"});
                     this.solve();
                 }}>Solve</button>
+                <button onClick={() => {
+                    this.setState({status:"Zeroed"});
+                    this.zeroOut();
+                }}>Zero</button>
+                <button onClick={() => {
+                    this.setState({status:"Generated"});
+                    this.makeIntoNewBoard();
+                    setTimeout(() => {
+                        this.setState({status:"Idle"});
+                    }, 2000);
+                }}>Make Into New</button>
                 <p>{this.state.status}</p>
             </div>
         )
     }
+}
+
+interface DrawTileProps {
+    value:number;
+    truth:boolean;
+}
+
+const DrawTile: React.FC<DrawTileProps> = (props) => {
+    const tileColor:string = props.truth ? "#111" : "#4141A8";
+    return (
+        <div style={{display:'inline', padding:"5px"}}>
+            <span style={{color:tileColor}}>{props.value}</span>
+        </div>
+    )
 }
 
 class BacktrackTuple {

@@ -13,11 +13,16 @@ const baseBoard = [
   [4, 9, 5, 0, 0, 6, 0, 0, 0], 
   [0, 0, 0, 0, 0, 0, 0, 9, 2]
 ]
+const emptyBoard:number[][] = [];
+const emptyBase:number = 3;
+for(let i=0; i<emptyBase*emptyBase; i++){
+  emptyBoard.push(new Array(emptyBase*emptyBase).fill(0));
+}
 
 const App: React.FC = () => {
   return (
     <div className="App">
-      <Board baseBoard={baseBoard} base={3}/>
+      <Board baseBoard={emptyBoard} base={emptyBase}/>
     </div>
   );
 }
